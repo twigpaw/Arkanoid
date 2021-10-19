@@ -47,6 +47,9 @@ GLuint loadShader(int shaderType, const string &fileName) {
 }
 
 GLint timeUniform;
+GLint positionUniform;
+
+GLfloat position[2] = {0.2f, 0.3f};
 
 GLuint createShaderProgram() {
     GLuint vertexShader   = loadShader(GL_VERTEX_SHADER,   "../basic.vsh");
@@ -58,8 +61,6 @@ GLuint createShaderProgram() {
     glBindAttribLocation(shaderProgram, 0, "a_position");
     glLinkProgram(shaderProgram);
 
-    timeUniform = glGetUniformLocation(shaderProgram, "u_time");
-
     GLint success;
     GLchar infoLog[512];
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
@@ -67,6 +68,12 @@ GLuint createShaderProgram() {
         glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
         std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
     }
+
+    glUseProgram(shaderProgram);
+
+    timeUniform = glGetUniformLocation(shaderProgram, "u_time");
+    positionUniform = glGetUniformLocation(shaderProgram, "u_position");
+
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
@@ -83,6 +90,11 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 
     if (key == GLFW_KEY_R && action == GLFW_PRESS)
         program = createShaderProgram();
+
+    if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+        position[0] += 0.05;
+    }
+
 }
 
 GLFWwindow* initWindow() {
@@ -141,8 +153,6 @@ int main() {
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(vertices[0]), nullptr);
     glEnableVertexAttribArray(0);
 
-    glUseProgram(program);
-
     while (!glfwWindowShouldClose(window)) {
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
@@ -152,6 +162,8 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUniform1f(timeUniform, (GLfloat) glfwGetTime());
+        glUniform2fv(positionUniform, 1, position);
+        
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         glfwSwapBuffers(window);

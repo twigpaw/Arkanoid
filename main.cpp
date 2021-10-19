@@ -30,8 +30,10 @@ GLuint loadShader(int shaderType, const string &fileName) {
     GLuint shader = glCreateShader(shaderType);
     glShaderSource(shader, 1, StringHelper(shaderSource), nullptr);
     glCompileShader(shader);
+
     GLint success;
     GLchar infoLog[512];
+
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 
     if(success) {
@@ -56,7 +58,7 @@ GLuint createShaderProgram() {
     glBindAttribLocation(shaderProgram, 0, "a_position");
     glLinkProgram(shaderProgram);
 
-    timeUniform = glGetUniformLocation(shaderProgram, "time");
+    timeUniform = glGetUniformLocation(shaderProgram, "u_time");
 
     GLint success;
     GLchar infoLog[512];
@@ -71,12 +73,11 @@ GLuint createShaderProgram() {
     return shaderProgram;
 }
 
-static void error_callback(int error, const char* description) {
-    fprintf(stderr, "Error: %s\n", description);
+static void errorCallback(int error, const char* description) {
+    std::cout << "Error: " << error << ' ' << description << std::endl;
 }
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
+static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 
@@ -87,7 +88,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 GLFWwindow* initWindow() {
     GLFWwindow* window;
 
-    glfwSetErrorCallback(error_callback);
+    glfwSetErrorCallback(errorCallback);
 
     if (!glfwInit())
         exit(EXIT_FAILURE);
@@ -96,19 +97,21 @@ GLFWwindow* initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
     window = glfwCreateWindow(640, 480, "Arkanoid", nullptr, nullptr);
-    if (!window)
-    {
+
+    if (!window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
 
-    glfwSetKeyCallback(window, key_callback);
+    glfwSetKeyCallback(window, keyCallback);
 
     glfwMakeContextCurrent(window);
+
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         std::cout << "Failed to initialize OpenGL context" << std::endl;
         exit(EXIT_FAILURE);
     }
+
     glfwSwapInterval(1);
 
     return window;
@@ -134,8 +137,11 @@ int main() {
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(vertices[0]), nullptr);
     glEnableVertexAttribArray(0);
+
+    glUseProgram(program);
 
     while (!glfwWindowShouldClose(window)) {
         int width, height;
@@ -145,9 +151,7 @@ int main() {
         glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(program);
-        glUniform1f(timeUniform, glfwGetTime());
-        glBindVertexArray(VAO);
+        glUniform1f(timeUniform, (GLfloat) glfwGetTime());
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         glfwSwapBuffers(window);
